@@ -1,0 +1,46 @@
+body {
+    background-color: lightblue;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.common {
+    background-color: gray;
+    border: 2px solid;
+    position: absolute;
+}
+
+.header {
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    height: 100px;
+}
+
+.left {
+    top: 115px;
+    left: 5px;
+    bottom: 40px;
+    width: 100px;
+}
+
+.main {
+    top: 115px;
+    left: 115px;
+    right: 115px;
+    bottom: 40px;
+}
+
+.right {
+    top: 115px;
+    right: 5px;
+    bottom: 40px;
+    width: 100px;
+}
+
+.footer {
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    height: 30px;
+}
+
