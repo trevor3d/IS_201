@@ -1,0 +1,64 @@
+
+
+
+body {
+  background-image: url("https://t3.ftcdn.net/jpg/03/53/02/42/240_F_353024251_u6f33z5rVWc52ItyEsnqLQAzoGBa6grq.jpg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-attachment: fixed ;
+  background-size: cover;
+  
+  color: white;
+}
+h1{
+    text-align: center;
+    font-style: oblique;
+}
+h2{text-align: center;
+font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
+h3{color:yellow;}
+#neb{text-align: center;}
+h5{text-align: center;}
+li{
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;}
+a{color:lightblue;}
+.common {
+    background-color:transparent;
+    border: 2px solid;
+}
+header{
+    border:2px solid;
+    padding:20px;
+}
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap:20px;
+  padding:20px;}
+
+main{flex:1;}
+
+.right {
+    width: 255px;}
+
+.footer{
+    text-align: center;
+  padding: 20px;
+  margin-top: 40px;
+  border: 2px solid;
+}
+.video-container {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 */
+  height: 0;
+  overflow: hidden;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+

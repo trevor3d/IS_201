@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Space Explorer</title>
+
+<style>
+  body {
+    margin: 0;
+    background: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+
+  canvas {
+    display: block;
+    margin: auto;
+    background: radial-gradient(circle at top, #060b2d, #000);
+  }
+
+  #ui {
+    margin-top: 10px;
+  }
+
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+</style>
+</head>
+
+<body>
+
+<h1>🚀 Space Explorer</h1>
+<p>↑ ↓ to fly — collect stars — avoid space hazards</p>
+
+<canvas id="game" width="900" height="500"></canvas>
+
+<div id="ui">
+  <p id="status"></p>
+  <button id="restartBtn" onclick="resetGame()" style="display:none;">
+    🔁 Play Again
+  </button>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let ship, stars, objects, nebulas, score, power, gameOver;
+let speedMultiplier;
+
+// ---------- SETUP ----------
+function startGame() {
+  ship = { x: 120, y: 250, size: 18, speed: 6 };
+  stars = Array.from({ length: 120 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    speed: Math.random() * 2 + 1
+  }));
+  objects = [];
+  nebulas = [];
+  score = 0;
+  power = "None";
+  gameOver = false;
+
+  document.getElementById("status").textContent = "";
+  document.getElementById("restartBtn").style.display = "none";
+speedMultiplier = 1;
+
+}
+
+// ---------- DRAWING ----------
+function drawStars() {
+  ctx.fillStyle = "white";
+  stars.forEach(s => {
+    ctx.fillRect(s.x, s.y, 2, 2);
+    s.x -= s.speed *speedMultiplier;
+    if (s.x < 0) s.x = canvas.width;
+  });
+}
+
+function drawShip() {
+  ctx.fillStyle = "cyan";
+  ctx.beginPath();
+  ctx.moveTo(ship.x + 20, ship.y);
+  ctx.lineTo(ship.x - 10, ship.y - 12);
+  ctx.lineTo(ship.x - 5, ship.y);
+  ctx.lineTo(ship.x - 10, ship.y + 12);
+  ctx.closePath();
+  ctx.fill();
+
+  // Engine flame
+  ctx.fillStyle = "orange";
+  ctx.beginPath();
+  ctx.moveTo(ship.x - 10, ship.y - 5);
+  ctx.lineTo(ship.x - 25, ship.y);
+  ctx.lineTo(ship.x - 10, ship.y + 5);
+  ctx.fill();
+}
+
+function drawPlanet(x, y, r, color) {
+  const grad = ctx.createRadialGradient(x - r/3, y - r/3, r/4, x, y, r);
+  grad.addColorStop(0, "#fff");
+  grad.addColorStop(1, color);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawSaturn(x, y, r) {
+  drawPlanet(x, y, r, "#d2b48c");
+  ctx.strokeStyle = "rgba(200,200,200,0.7)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.ellipse(x, y, r * 1.7, r * 0.6, Math.PI / 6, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function drawAsteroid(x, y, r) {
+  ctx.fillStyle = "#777";
+  ctx.beginPath();
+  const points = 9;
+  for (let i = 0; i < points; i++) {
+    const angle = (Math.PI * 2 / points) * i;
+    const offset = r * (0.6 + Math.random() * 0.4);
+    ctx.lineTo(x + Math.cos(angle) * offset, y + Math.sin(angle) * offset);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawNeutronStar(x, y, r) {
+  const grad = ctx.createRadialGradient(x, y, 2, x, y, r);
+  grad.addColorStop(0, "#fff");
+  grad.addColorStop(1, "#66ccff");
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawBlackHole(x, y, r) {
+  const grad = ctx.createRadialGradient(x, y, r, x, y, r * 3);
+  grad.addColorStop(0, "rgba(150,0,255,0.4)");
+  grad.addColorStop(1, "black");
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, r * 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "black";
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawNebula(n) {
+  ctx.fillStyle =
+    n.type === "speed" ? "lime" :
+    n.type === "shield" ? "gold" : "pink";
+  ctx.beginPath();
+  ctx.arc(n.x, n.y, n.size, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// ---------- GAME LOGIC ----------
+function spawnObject() {
+  const types = ["asteroid", "planet", "neutron", "blackhole"];
+  const type = types[Math.floor(Math.random() * types.length)];
+  objects.push({
+    x: canvas.width,
+    y: Math.random() * canvas.height,
+    size: type === "planet" ? 30 : 18,
+    speed: type === "blackhole" ? 2 : 6,
+    type
+  });
+}
+
+function spawnNebula() {
+  const types = ["speed", "shield", "slow"];
+  nebulas.push({
+    x: canvas.width,
+    y: Math.random() * canvas.height,
+    size: 22,
+    type: types[Math.floor(Math.random() * types.length)]
+  });
+}
+
+function collision(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y) < a.size + b.size;
+}
+
+function endGame() {
+  gameOver = true;
+  document.getElementById("status").textContent =
+    `💥 Game Over — Score: ${score}`;
+  document.getElementById("restartBtn").style.display = "inline-block";
+}
+
+// ---------- LOOP ----------
+function gameLoop() {
+    // Gradually increase game speed
+speedMultiplier = 1 + score / 1500;
+
+  if (gameOver) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawStars();
+  drawShip();
+// Keep ship inside screen boundaries
+if (ship.y < ship.size) {
+  ship.y = ship.size;
+}
+if (ship.y > canvas.height - ship.size) {
+  ship.y = canvas.height - ship.size;
+}
+
+  objects.forEach((o, i) => {
+    o.x -= o.speed * speedMultiplier;
+
+    if (o.type === "asteroid") drawAsteroid(o.x, o.y, o.size);
+    if (o.type === "planet") Math.random() < 0.3 ? drawSaturn(o.x, o.y, o.size) : drawPlanet(o.x, o.y, o.size, "#4a90e2");
+    if (o.type === "neutron") drawNeutronStar(o.x, o.y, o.size);
+    if (o.type === "blackhole") drawBlackHole(o.x, o.y, o.size);
+
+    if (collision(ship, o)) {
+      if (power === "Shield") power = "None";
+      else endGame();
+    }
+  });
+
+  nebulas.forEach((n, i) => {
+    n.x -= 4 *speedMultiplier;
+    drawNebula(n);
+    if (collision(ship, n)) {
+      power = n.type;
+      ship.speed = n.type === "speed" ? 9 : n.type === "slow" ? 3 : ship.speed;
+      setTimeout(() => { ship.speed = 6; power = "None"; }, 5000);
+      nebulas.splice(i, 1);
+    }
+  });
+
+  score+=speedMultiplier;
+  document.getElementById("status").textContent =
+    `Light-Years Traveled: ${Math.floor(score)} | Power: ${power}`;
+
+}
+
+// ---------- INPUT ----------
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowUp") ship.y -= ship.speed;
+  if (e.key === "ArrowDown") ship.y += ship.speed;
+});
+
+// ---------- START ----------
+startGame();
+setInterval(gameLoop, 35);
+setInterval(spawnObject, 900);
+setInterval(spawnNebula, 4500);
+
+function resetGame() {
+  startGame();
+}
+</script>
+
+</body>
+</html>
